@@ -9,12 +9,13 @@ function TicketList(props){
       <hr/>
       {props.ticketList.map((ticket) =>
         <Ticket 
-          whenTicketClicked={props.onTicketSelection}
-          names={ticket.names}
-          location={ticket.location}
-          issue={ticket.issue}
-          id={ticket.id}
-          key={ticket.id}/>
+        whenTicketClicked={props.onTicketSelection}
+        names={ticket.names}
+        location={ticket.location}
+        formattedWaitTime={ticket.formattedWaitTime}
+        issue={ticket.issue}
+        id={ticket.id}
+        key={ticket.id}/>
       )}
     </React.Fragment>
   );

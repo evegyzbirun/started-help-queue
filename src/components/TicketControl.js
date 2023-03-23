@@ -1,23 +1,70 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import NewTicketForm from './NewTicketForm';
 import TicketList from './TicketList';
 import EditTicketForm from './EditTicketForm';
 import TicketDetail from './TicketDetail';
+import { collection, addDoc, doc, updateDoc, onSnapshot, deleteDoc, query, orderBy } from "firebase/firestore";
+import { db, auth } from './../firebase.js';
+import { formatDistanceToNow } from 'date-fns';
 
 function TicketControl() {
   const [formVisibleOnPage, setFormVisibleOnPage] = useState(false);
   const [mainTicketList, setMainTicketList] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [editing, setEditing] = useState(false);
-  // constructor(props) {
-  //   super(props);
-  //   this.state = {
-  //     formVisibleOnPage: false,
-  //     mainTicketList: [],
-  //     selectedTicket: null,
-  //     editing: false
-  //   };
-  // }
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    function updateTicketElapsedWaitTime() {
+      const newMainTicketList = mainTicketList.map(ticket => {
+        const newFormattedWaitTime = formatDistanceToNow(ticket.timeOpen);
+        return {...ticket, formattedWaitTime: newFormattedWaitTime};
+      });
+      setMainTicketList(newMainTicketList);
+    }
+
+    const waitTimeUpdateTimer = setInterval(() =>
+      updateTicketElapsedWaitTime(), 
+      60000
+    );
+
+    return function cleanup() {
+      clearInterval(waitTimeUpdateTimer);
+    }
+  }, [mainTicketList])
+  
+  useEffect(() => { 
+    const queryByTimestamp = query(
+      collection(db, "tickets"), 
+      orderBy('timeOpen')
+    );
+    const unSubscribe = onSnapshot(
+      queryByTimestamp, 
+      (querySnapshot) => {
+        const tickets = [];
+        querySnapshot.forEach((doc) => {
+          const timeOpen = doc.get('timeOpen', {serverTimestamps: "estimate"}).toDate();
+          const jsDate = new Date(timeOpen);
+          tickets.push({
+            names: doc.data().names, 
+            location: doc.data().location, 
+            issue: doc.data().issue, 
+            timeOpen: jsDate,
+            formattedWaitTime: formatDistanceToNow(jsDate),
+            id: doc.id
+          });
+        });
+        setMainTicketList(tickets);
+      },
+      (error) => {
+        setError(error.message);
+      }
+    );
+
+    return () => unSubscribe();
+  }, []);
+   
+
 
 
 
@@ -32,10 +79,8 @@ function TicketControl() {
     }
   }
 
-  const handleDeletingTicket = (id) => {
-    const newMainTicketList = mainTicketList.filter(ticket => ticket.id !== id);
-    setMainTicketList(newMainTicketList);
-    // new code!
+  const handleDeletingTicket = async (id) => {
+    await deleteDoc(doc(db, "tickets", id));
     setSelectedTicket(null);
   }
 
@@ -44,26 +89,19 @@ function TicketControl() {
     setEditing(true);
   }
 
-  const handleEditingTicketInList = (ticketToEdit) => {
-    const editedMainTicketList = this.state.mainTicketList
-      .filter(ticket => ticket.id !== this.state.selectedTicket.id)
-      .concat(ticketToEdit);
-
-    setMainTicketList(editedMainTicketList);
-
-    this.setState({
-      mainTicketList: editedMainTicketList,
-      editing: false,
-      selectedTicket: null
-    });
+  const handleEditingTicketInList = async (ticketToEdit) => {
+    const ticketRef = doc(db, "tickets", ticketToEdit.id);
+    await updateDoc(ticketRef, ticketToEdit);
+    setEditing(false);
+    setSelectedTicket(null);
   }
 
-  const handleAddingNewTicketToList = (newTicket) => {
-    const newMainTicketList = mainTicketList.concat(newTicket);
-
-    setMainTicketList(newMainTicketList);
-    setFormVisibleOnPage(false)
+  const handleAddingNewTicketToList = async (newTicketData) => {
+    const collectionRef = collection(db, "tickets");
+    await addDoc(collectionRef, newTicketData);
+    setFormVisibleOnPage(false);
   }
+
 
   const handleChangingSelectedTicket = (id) => {
 
@@ -74,32 +112,42 @@ function TicketControl() {
     setSelectedTicket(selection);
   }
 
+  if (auth.currentUser == null) {
+    return (
+      <React.Fragment>
+        <h1>You must be signed in to access the queue.</h1>
+      </React.Fragment>
+    )
+  } else if (auth.currentUser != null) {
+    <React.Fragment>
+      <h1>You welcome.</h1>
+    </React.Fragment>
+  }
 
   let currentlyVisibleState = null;
   let buttonText = null;
-  if (editing) {
+
+  if (error) {
+    currentlyVisibleState = <p>There was an error: {error}</p>
+  }
+  else if (editing) {
     currentlyVisibleState =
       <EditTicketForm
-        // new code: selectedTicket
         ticket={selectedTicket}
-        onEditTicket={this.handleEditingTicketInList} />
+        onEditTicket={handleEditingTicketInList} />;
     buttonText = "Return to Ticket List";
-
   } else if (selectedTicket != null) {
     currentlyVisibleState =
       <TicketDetail
-        // new code: selectedTicket
         ticket={selectedTicket}
-        onClickingDelete={this.handleDeletingTicket}
-        onClickingEdit={this.handleEditClick} />
+        onClickingDelete={handleDeletingTicket}
+        onClickingEdit={handleEditClick} />;
     buttonText = "Return to Ticket List";
-
   } else if (formVisibleOnPage) {
     currentlyVisibleState =
       <NewTicketForm
         onNewTicketCreation={handleAddingNewTicketToList} />;
     buttonText = "Return to Ticket List";
-
   } else {
     currentlyVisibleState =
       <TicketList
@@ -108,15 +156,14 @@ function TicketControl() {
     buttonText = "Add Ticket";
   }
 
-
-
   return (
     <React.Fragment>
       {currentlyVisibleState}
-      <button onClick={this.handleClick}>{buttonText}</button>
+      {error ? null : <button onClick={handleClick}>{buttonText}</button>}
     </React.Fragment>
   );
 }
+
 
 
 export default TicketControl;

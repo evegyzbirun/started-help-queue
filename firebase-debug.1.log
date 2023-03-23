@@ -1,0 +1,25 @@
+[debug] [2023-02-13T00:55:33.305Z] ----------------------------------------------------------------------
+[debug] [2023-02-13T00:55:33.307Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\zbiru\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2023-02-13T00:55:33.307Z] CLI Version:   11.22.0
+[debug] [2023-02-13T00:55:33.307Z] Platform:      win32
+[debug] [2023-02-13T00:55:33.307Z] Node Version:  v16.14.2
+[debug] [2023-02-13T00:55:33.308Z] Time:          Sun Feb 12 2023 16:55:33 GMT-0800 (Pacific Standard Time)
+[debug] [2023-02-13T00:55:33.308Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2023-02-13T00:55:33.366Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2023-02-13T00:55:33.366Z] > authorizing via signed-in user (zbirunzbirun@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\zbiru\Desktop\REACT\react-help-queue-starter-project
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
